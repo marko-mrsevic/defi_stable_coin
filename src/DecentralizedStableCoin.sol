@@ -44,9 +44,7 @@ contract DecentralizedStableCoin is ERC20Burnable, Ownable {
     error DecentralizedStableCoin__BurnAmountExceedsBalance();
     error DecentralizedStableCoin__NotZeroAddress();
 
-    address public immutable initialOwner;
-
-    constructor() ERC20("DecentralizedStableCoin", "DSC") Ownable(initialOwner) {}
+    constructor() ERC20("DecentralizedStableCoin", "DSC") Ownable(msg.sender) {}
 
     function burn(uint256 _amount) public override onlyOwner {
         uint256 balance = balanceOf(msg.sender);
