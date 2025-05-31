@@ -14,7 +14,9 @@ contract DSCEngineTest is Test {
     DSCEngine dscEngine;
     HelperConfig config;
     address ethUsdPriceFeed;
+    address btcUsdPriceFeeed;
     address weth;
+    address wbtc;
 
     address public USER = makeAddr("user");
     uint256 public constant AMOUNT_COLLATERAL = 10 ether;
@@ -23,10 +25,25 @@ contract DSCEngineTest is Test {
     function setUp() public {
         DeployDSC deployer = new DeployDSC();
         (dsc, dscEngine, config) = deployer.run();
-        (ethUsdPriceFeed,, weth,,) = config.activeNetworkConfig();
+        (ethUsdPriceFeed, btcUsdPriceFeeed, weth, wbtc,) = config.activeNetworkConfig();
         ERC20Mock(weth).mint(USER, STARTING_ERC20_BALANCE);
         // Set up initial conditions if needed
         // e.g., minting tokens, setting price feeds, etc.
+    }
+
+    /////////////////////////////////
+    //      Constructor Tests      //
+    /////////////////////////////////
+    address[] public tokenAddresses;
+    address[] public priceFeedAddresses;
+
+    function testRevertIfTokenLenghtDoesNotMatchPriceFeedLength() public {
+        tokenAddresses.push(weth);
+        priceFeedAddresses.push(ethUsdPriceFeed);
+        priceFeedAddresses.push(btcUsdPriceFeeed); // Extra price feed
+
+        vm.expectRevert(DSCEngine.DSCEngine__TokenAddressesAndPriceFeedAddressesLengthMismatch.selector);
+        new DSCEngine(address(dsc), tokenAddresses, priceFeedAddresses);
     }
 
     ///////////////////////////
@@ -37,6 +54,13 @@ contract DSCEngineTest is Test {
         uint256 expectedUsdValue = (ethAmount * 2000e8) / 1e8; // Assuming ETH price is $2000
         uint256 actualUsdValue = dscEngine.getCollateralValueInUsd(weth, ethAmount);
         assertEq(actualUsdValue, expectedUsdValue);
+    }
+
+    function testGetTokenAmountFromUsd() public view {
+        uint256 usdAmount = 100 ether; 
+        uint256 expectedTokenAmount = 0.05 ether; // Assuming ETH price is $2000
+        uint256 actualTokenAmount = dscEngine.getTokenAmountFromUsd(weth, usdAmount);
+        assertEq(actualTokenAmount, expectedTokenAmount);
     }
 
     ///////////////////////////////////////
